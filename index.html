@@ -151,8 +151,13 @@ th{font-weight:500;color:var(--muted);font-size:.78rem}
 .amt{font-family:var(--font-mono);white-space:nowrap}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(1rem + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:.5rem 1rem;border-radius:2rem;font-size:.85rem;z-index:20;max-width:90vw}
 .notice{padding:2rem 1rem;text-align:center;color:var(--muted)}
-.keyrow{display:flex;gap:.5rem;align-items:center;padding:.7rem .8rem;flex-wrap:wrap}
-.keyrow input{flex:1;min-width:10rem}
+.kback{position:fixed;inset:0;z-index:30;background:rgba(8,16,30,.55);display:flex;align-items:center;justify-content:center;padding:1rem}
+.kback[hidden]{display:none}
+.kbox{background:var(--surface);color:var(--ink);border-radius:.8rem;padding:1.2rem;width:min(22rem,100%);box-shadow:0 12px 40px rgba(0,0,0,.3);display:flex;flex-direction:column;gap:.7rem}
+.kbox h3{margin:0;font-family:var(--font-display);font-size:1.15rem}
+.kbox .sub{margin:0}
+.kerr{margin:0;color:var(--danger);font-size:.82rem;min-height:1.2em}
+.acts2{display:flex;justify-content:flex-end;gap:.5rem}
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
 </style>
 </head>
@@ -275,7 +280,7 @@ function enqueue(fn){
   if(!API_URL){if(!enqueue.warned){enqueue.warned=1;toast('尚未連接試算表，修改不會被儲存');}return;}
   S.busy++;S.status='saving';renderHeader();
   chain=chain.then(fn).catch(function(e){
-    toast(e.message==='unauthorized'?'需要編輯密碼才能修改':'儲存失敗，已重新載入試算表內容');
+    if(e.message==='unauthorized')syncKeyModal();else toast('儲存失敗，已重新載入試算表內容');
   }).then(function(){S.busy--;if(!S.busy){S.status='live';return load().then(function(){rerender(true);});}});
 }
 function save(kind,obj){
@@ -667,17 +672,36 @@ function renderHeader(){
   TABS.forEach(function(p){tabs.append(h('button',{type:'button',role:'tab','aria-selected':S.tab===p[0]?'true':'false',text:p[1],
     onclick:function(){location.hash=p[0];}}));});
 }
-function keyCard(){
-  var inp=h('input',{type:'password',id:'editkey',placeholder:'輸入編輯密碼',autocomplete:'off'});
-  var form=h('form',{class:'card keyrow'},h('span',{text:'修改需要編輯密碼：'}),inp,h('button',{type:'submit',class:'btn primary',text:'確認'}));
-  form.addEventListener('submit',function(e){e.preventDefault();S.key=inp.value.trim();store('hanoi.key',S.key);S.needKey=false;toast('已儲存密碼，請重新修改一次');load().then(function(){rerender(true);});});
-  return form;
+var keyModal=null;
+function syncKeyModal(){
+  if(!S.needKey){if(keyModal)keyModal.hidden=true;return;}
+  if(!keyModal){
+    var inp=h('input',{type:'password',id:'editkey',placeholder:'編輯密碼',autocomplete:'off'});
+    var form=h('form',{class:'kbox',role:'dialog','aria-modal':'true','aria-labelledby':'keytitle'},
+      h('h3',{id:'keytitle',text:'需要編輯密碼'}),
+      h('p',{class:'sub',text:'這份行程需要密碼才能修改。輸入後會記在這個瀏覽器，之後不用再輸入。'}),
+      inp,h('p',{class:'kerr',id:'keyerr'}),
+      h('div',{class:'acts2'},
+        h('button',{type:'button',class:'btn',text:'取消',onclick:function(){S.needKey=false;syncKeyModal();}}),
+        h('button',{type:'submit',class:'btn primary',text:'確認'})));
+    form.addEventListener('submit',function(e){
+      e.preventDefault();var v=inp.value.trim();if(!v)return;
+      S.key=v;store('hanoi.key',v);S.needKey=false;inp.value='';syncKeyModal();
+      toast('密碼已儲存，請再修改一次');load().then(function(){rerender(true);});
+    });
+    keyModal=h('div',{class:'kback'},form);
+    keyModal.addEventListener('keydown',function(e){if(e.key==='Escape'){S.needKey=false;syncKeyModal();}});
+    document.body.append(keyModal);
+  }
+  document.getElementById('keyerr').textContent=S.key?'密碼不正確，請再試一次。':'';
+  keyModal.hidden=false;
+  setTimeout(function(){var k=document.getElementById('editkey');if(k)k.focus();},0);
 }
 function render(){
   renderHeader();
   var view=document.getElementById('view');view.textContent='';
   if(S.status==='demo')view.append(h('div',{class:'banner',text:'目前顯示的是示範資料。把 Apps Script 的網頁應用程式網址貼進 index.html 最上方的 API_URL，就會連動你的 Google 試算表。'}));
-  if(S.needKey)view.append(keyCard());
+  syncKeyModal();
   if(S.tab==='overview')view.append(viewOverview());
   else if(S.tab==='itinerary')view.append(viewItinerary());
   else if(S.tab==='bookings')view.append(viewBookings());
