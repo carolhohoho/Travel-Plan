@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>河內行程</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700&display=swap">
+<title>旅行行程</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&display=swap">
 <style>
-/* Layout: sticky header + tabs, one column up to 880px; days as chips, each day split into meal/time slots. */
+/* Layout: sticky header; trip list = card grid; trip view = tabs (overview table / day chips + slots / bookings / costs). */
 :root{
   color-scheme:light;
   --bg:#EEF3FA; --surface:#FFFFFF; --ink:#10253F; --muted:#566A82; --line:#D2DDEB;
   --accent:#1D5FC1; --accent-ink:#FFFFFF; --chip:#E1EAF6;
   --warm:#B7860B; --warm-soft:#FBF0CF; --warm-ink:#5A4300;
   --danger:#B3402F;
-  --font-display:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --font-display:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
   --font-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
   --font-mono:"DM Mono",ui-monospace,Menlo,Consolas,monospace;
 }
@@ -41,23 +41,39 @@ button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 a{color:var(--accent)}
+[hidden]{display:none!important}
 
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-top:1.1rem;border-bottom:1px solid var(--line)}
+.top.plain{position:static;border-bottom:0}
 .brand{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap}
 h1{margin:0;font-family:var(--font-display);font-size:2rem;line-height:1.1;letter-spacing:.02em;text-wrap:balance}
 h1 small{font-family:var(--font-mono);font-weight:400;font-size:.8rem;color:var(--muted);letter-spacing:.04em;margin-left:.6rem}
-.meta{margin:.35rem 0 0;color:var(--muted);font-family:var(--font-mono);font-size:.8rem;display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
+.meta{margin:.35rem 0 0;color:var(--muted);font-family:var(--font-mono);font-size:.8rem;display:flex;gap:.8rem;flex-wrap:wrap;align-items:center}
+.linkbtn{background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;text-underline-offset:3px;font-size:inherit;font-family:inherit}
 .sync{font-family:var(--font-mono);font-size:.72rem;color:var(--muted);display:flex;align-items:center;gap:.4rem;padding-top:.5rem}
 .sync i{width:.5rem;height:.5rem;border-radius:50%;background:var(--muted);display:inline-block}
 .sync.live i{background:var(--accent)}
 .sync.error i{background:var(--danger)}
-.sync.demo i{background:var(--warm)}
 .tabs{display:flex;gap:.25rem;margin-top:.9rem;overflow-x:auto}
 .tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:.6rem .9rem;color:var(--muted);font-weight:500;white-space:nowrap}
 .tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);font-weight:700}
 
 main{padding-top:1.2rem}
-.banner{background:var(--warm-soft);color:var(--warm-ink);border-radius:.5rem;padding:.6rem .9rem;margin-bottom:1rem;font-size:.88rem}
+
+/* 旅程列表 */
+.trips{display:grid;grid-template-columns:repeat(auto-fill,minmax(15rem,1fr));gap:.8rem}
+.tcard{display:flex;flex-direction:column;gap:.35rem;text-decoration:none;color:inherit;background:var(--surface);border:1px solid var(--line);border-radius:.8rem;padding:1rem 1.1rem;min-width:0}
+.tcard:hover{border-color:var(--accent)}
+.tcard .yr{font-family:var(--font-mono);font-size:.75rem;color:var(--muted);letter-spacing:.06em}
+.tcard .nm{font-family:var(--font-display);font-size:1.4rem;font-weight:700;line-height:1.2;overflow-wrap:anywhere}
+.tcard .nm small{display:block;font-family:var(--font-mono);font-weight:400;font-size:.75rem;color:var(--muted);margin-top:.15rem}
+.tcard .dt{font-family:var(--font-mono);font-size:.82rem;color:var(--muted)}
+.pill{align-self:flex-start;font-size:.72rem;border-radius:2rem;padding:.05rem .6rem;background:var(--chip);color:var(--muted)}
+.pill.now{background:var(--accent);color:var(--accent-ink)}
+.pill.soon{background:var(--warm-soft);color:var(--warm-ink)}
+.tcard .sl2{margin-top:.3rem;font-size:.78rem}
+
+/* 每日行程 */
 .days{display:flex;gap:.5rem;overflow-x:auto;padding-bottom:.4rem;margin-bottom:1rem;scrollbar-width:thin}
 .daychip{flex:0 0 auto;min-width:3.6rem;background:var(--chip);border:1px solid transparent;border-radius:.6rem;padding:.4rem .6rem;text-align:center;line-height:1.25}
 .daychip b{display:block;font-family:var(--font-mono);font-weight:500;font-size:.95rem}
@@ -65,7 +81,6 @@ main{padding-top:1.2rem}
 .daychip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
 .daychip[aria-pressed="true"] span{color:inherit;opacity:.85}
 .daychip.today{border-color:var(--accent)}
-
 .dayhead{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;flex-wrap:wrap;margin-bottom:.8rem}
 h2{margin:0;font-family:var(--font-display);font-size:1.35rem;text-wrap:balance}
 h2 .dn{font-family:var(--font-mono);font-size:.78rem;color:var(--muted);font-weight:400;margin-right:.5rem;letter-spacing:.04em}
@@ -74,7 +89,6 @@ h2 .dn{font-family:var(--font-mono);font-size:.78rem;color:var(--muted);font-wei
 .strip .k{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.06em;border:1px solid currentColor;border-radius:.3rem;padding:0 .35rem}
 .strip .t{font-family:var(--font-mono);font-size:.85rem}
 .strip a{color:inherit}
-
 .slot{display:grid;grid-template-columns:3.2rem minmax(0,1fr);gap:.8rem;padding:.9rem 0;border-top:1px solid var(--line)}
 .slot>.sl{font-size:.8rem;color:var(--muted);font-weight:700;padding-top:.55rem;letter-spacing:.08em}
 .list{display:flex;flex-direction:column;gap:.45rem;min-width:0}
@@ -117,20 +131,16 @@ textarea{resize:vertical}
 .route{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
 .route .arr{color:var(--muted)}
 .empty{color:var(--muted);padding:1rem;border:1px dashed var(--line);border-radius:.6rem;text-align:center}
-.totals{display:grid;grid-template-columns:repeat(auto-fit,minmax(9rem,1fr));gap:.6rem;margin-bottom:1rem}
-.tot{background:var(--surface);border:1px solid var(--line);border-radius:.6rem;padding:.6rem .8rem}
-.tot small{display:block;color:var(--muted);font-size:.75rem}
-.tot b{font-family:var(--font-mono);font-size:1.25rem;font-weight:500}
-.rates{display:flex;gap:1rem;flex-wrap:wrap;align-items:center;font-size:.85rem;color:var(--muted);margin-bottom:1rem}
-.rates label{display:flex;gap:.4rem;align-items:center}
-.rates input{width:5.5rem}
-.tablewrap{overflow-x:auto;margin-bottom:1rem}
+.notice{padding:2rem 1rem;text-align:center;color:var(--muted)}
+.hint{color:var(--muted);font-size:.8rem;margin:.6rem 0 0}
+
+/* 總覽 */
 .ovwrap{overflow-x:auto;border:1px solid var(--line);border-radius:.6rem;background:var(--surface)}
 .ov{border-collapse:separate;border-spacing:0;width:100%;min-width:44rem;table-layout:fixed;font-size:.85rem}
 .ov th,.ov td{text-align:left;vertical-align:top;white-space:normal;padding:.55rem .6rem;border-bottom:1px solid var(--line);border-right:1px solid var(--line);font-family:var(--font-body);overflow-wrap:anywhere}
 .ov tr>*:last-child{border-right:0}
 .ov tbody tr:last-child>*{border-bottom:0}
-.ov thead th{background:var(--chip);position:sticky;top:0}
+.ov thead th{background:var(--chip)}
 .ov .rl{position:sticky;left:0;z-index:1;background:var(--chip);width:3.4rem;font-size:.78rem;color:var(--muted);letter-spacing:.08em;font-weight:700}
 .ov .dh button{background:none;border:0;padding:0;text-align:left;font-family:var(--font-mono);font-weight:500;font-size:.88rem;color:var(--ink);line-height:1.3}
 .ov .dh button:hover{color:var(--accent);text-decoration:underline}
@@ -141,18 +151,26 @@ textarea{resize:vertical}
 .ovf{display:block;background:var(--warm-soft);color:var(--warm-ink);border-radius:.3rem;padding:.2rem .45rem;margin-bottom:.3rem;font-family:var(--font-mono);font-size:.76rem}
 .ovs{display:block;font-weight:700;margin-bottom:.2rem}
 .ovs em{font-style:normal;font-weight:400;font-size:.72rem;color:var(--muted);margin-left:.3rem}
-.hint{color:var(--muted);font-size:.8rem;margin:.6rem 0 0}
+
+/* 費用 */
+.totals{display:grid;grid-template-columns:repeat(auto-fit,minmax(9rem,1fr));gap:.6rem;margin-bottom:1rem}
+.tot{background:var(--surface);border:1px solid var(--line);border-radius:.6rem;padding:.6rem .8rem}
+.tot small{display:block;color:var(--muted);font-size:.75rem}
+.tot b{font-family:var(--font-mono);font-size:1.25rem;font-weight:500}
+.rates{display:flex;gap:.8rem 1.4rem;flex-wrap:wrap;align-items:center;font-size:.85rem;color:var(--muted);margin-bottom:1rem}
+.rates label{display:flex;gap:.4rem;align-items:center}
+.rates input{width:6rem}
+.tablewrap{overflow-x:auto;margin-bottom:1rem}
 table{border-collapse:collapse;width:100%;font-size:.88rem}
-th,td{text-align:right;padding:.35rem .6rem;border-bottom:1px solid var(--line);white-space:nowrap}
-th:first-child,td:first-child{text-align:left}
-td{font-family:var(--font-mono)}
-td:first-child{font-family:var(--font-body)}
-th{font-weight:500;color:var(--muted);font-size:.78rem}
+.tablewrap th,.tablewrap td{text-align:right;padding:.35rem .6rem;border-bottom:1px solid var(--line);white-space:nowrap}
+.tablewrap th:first-child,.tablewrap td:first-child{text-align:left}
+.tablewrap td{font-family:var(--font-mono)}
+.tablewrap td:first-child{font-family:var(--font-body)}
+.tablewrap th{font-weight:500;color:var(--muted);font-size:.78rem}
 .amt{font-family:var(--font-mono);white-space:nowrap}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(1rem + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:.5rem 1rem;border-radius:2rem;font-size:.85rem;z-index:20;max-width:90vw}
-.notice{padding:2rem 1rem;text-align:center;color:var(--muted)}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(1rem + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:.5rem 1rem;border-radius:2rem;font-size:.85rem;z-index:40;max-width:90vw}
 .kback{position:fixed;inset:0;z-index:30;background:rgba(8,16,30,.55);display:flex;align-items:center;justify-content:center;padding:1rem}
-.kback[hidden]{display:none}
 .kbox{background:var(--surface);color:var(--ink);border-radius:.8rem;padding:1.2rem;width:min(22rem,100%);box-shadow:0 12px 40px rgba(0,0,0,.3);display:flex;flex-direction:column;gap:.7rem}
 .kbox h3{margin:0;font-family:var(--font-display);font-size:1.15rem}
 .kbox .sub{margin:0}
@@ -163,29 +181,25 @@ th{font-weight:500;color:var(--muted);font-size:.78rem}
 </head>
 <body>
 <div class="app">
-  <header class="top">
+  <header class="top" id="top">
     <div class="brand">
       <div>
-        <h1 id="ttl">河內<small>Hà Nội</small></h1>
+        <h1 id="ttl">旅行行程</h1>
         <p class="meta" id="meta"></p>
       </div>
-      <div class="sync" id="sync"><i></i><span>載入中</span></div>
+      <div class="sync" id="sync" hidden><i></i><span>載入中</span></div>
     </div>
-    <nav class="tabs" id="tabs" role="tablist"></nav>
+    <nav class="tabs" id="tabs" role="tablist" hidden></nav>
   </header>
-  <main id="view"><div class="notice">行程載入中…</div></main>
+  <main id="view"><div class="notice">載入中…</div></main>
 </div>
 <div class="toast" id="toast" hidden></div>
 
 <script>
 /* ================= 設定（只需要改這裡） ================= */
-// 1. 部署 Apps Script 後，把「網頁應用程式網址」（結尾是 /exec）貼在下面的引號中。
-//    留空時會顯示示範資料，修改不會儲存。
-var API_URL = 'https://script.google.com/macros/s/AKfycbz4byUMfyFfE4hTe2ZxvRpavYEFOKrArOemXX0e9ofFSu4C3JUietwnlysXBF7dorJW/exec';
-// 2. 你的 Google 試算表網址，用來在頁首顯示「在試算表開啟」連結。留空則不顯示。
-var SHEET_URL = 'https://docs.google.com/spreadsheets/d/1BVxY7hdnz-eyQqe7Zi3ndQlCRYc-uKDGHclq9j9sS60/edit';
-var TITLE = '河內', SUB = 'Hà Nội';
-var DEFAULT_START = '2026-11-20', DEFAULT_END = '2026-11-24';   // 試算表沒有任何日期時才會用到
+// 把 TravelHub.gs 部署後的「網頁應用程式網址」（結尾 /exec）貼在引號中。
+// 所有旅程共用這一個網址；有哪些旅程由「旅程總表」試算表決定。
+var HUB_URL = 'https://script.google.com/macros/s/AKfycbx3cXIojOiJhB1eCyMNABTsmYogJvQjDAFmQgb31Z9huW80SYCTuFcS7BEbfsXyocXL/exec';
 /* ====================================================== */
 
 (function(){
@@ -212,72 +226,101 @@ function isTmp(id){return String(id).indexOf('tmp_')===0;}
 function validUrl(u){return /^https?:\/\//i.test((u||'').trim());}
 function mapsSearch(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q);}
 function fmt(n){return Number(n||0).toLocaleString('en-US',{maximumFractionDigits:2});}
+function two(n){return String(n).padStart(2,'0');}
 function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v);}catch(e){}return null;}
+function jget(k,dflt){try{var v=JSON.parse(localStorage.getItem(k)||'null');return v==null?dflt:v;}catch(e){return dflt;}}
+function jset(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(function(){t.hidden=true;},3000);}
 
 var SLOTS=[['breakfast','早餐'],['morning','上午'],['lunch','午餐'],['afternoon','下午'],['dinner','晚餐'],['evening','晚上']];
-var CATS=['機票','住宿','餐飲','交通','門票','購物','按摩','其他'];
-var CURS=['TWD','VND','USD'];
+var DEFAULT_CATS=['機票','住宿','餐飲','交通','門票','購物','其他'];
+var STRONG=['USD','EUR','GBP','CHF','AUD','CAD','SGD','NZD'];
 var TABS=[['overview','總覽'],['itinerary','每日行程'],['bookings','航班與住宿'],['costs','費用']];
 
-/* 示範資料：還沒連上試算表、或第一次載入完成前顯示。內容與試算表相同。 */
-var SNAP_ITEMS=[
-['2026-11-20','lunch','','飛機午餐','',''],['2026-11-20','afternoon','','蛋咖啡','egg coffee Hanoi',''],['2026-11-20','afternoon','','逛街','',''],
-['2026-11-20','dinner','','烤魚','chả cá Hà Nội',''],['2026-11-20','dinner','','法國麵包','','備選'],
-['2026-11-20','evening','','逛夜市或看火車或隨便逛','Hanoi Old Quarter Night Market',''],['2026-11-20','evening','','按摩','',''],
-['2026-11-21','breakfast','','飯店早餐','',''],['2026-11-21','morning','7:30','上接駁車','','7:30 左右'],['2026-11-21','morning','11:30','登船','',''],
-['2026-11-21','lunch','','郵輪午餐','',''],['2026-11-21','afternoon','','洞穴探險','',''],['2026-11-21','afternoon','','下午茶','',''],
-['2026-11-21','afternoon','','烹飪課','',''],['2026-11-21','dinner','','郵輪晚餐','',''],['2026-11-21','evening','','釣魷魚','',''],['2026-11-21','evening','','聽音樂','',''],
-['2026-11-22','breakfast','','郵輪輕早餐','',''],['2026-11-22','morning','10:45','結束行程','',''],['2026-11-22','morning','11:00','上接駁車','','11:00 左右上車，約下午三點到飯店'],
-['2026-11-22','lunch','','郵輪早午餐','',''],['2026-11-22','afternoon','','洗頭','',''],['2026-11-22','afternoon','','逛商城／佳恩買綠豆糕','',''],
-['2026-11-22','dinner','','Pizza 4P\'s','Pizza 4P\'s Hanoi','可訂位'],['2026-11-22','evening','','樂天超市','Lotte Mart Hanoi',''],
-['2026-11-23','breakfast','','雞肉河粉','phở gà Hà Nội',''],['2026-11-23','morning','','奧黛','áo dài Hà Nội',''],['2026-11-23','lunch','','煎餅','','可訂位'],
-['2026-11-23','afternoon','','教堂（看火車）','St. Joseph\'s Cathedral Hanoi',''],['2026-11-23','afternoon','','隨便逛','',''],
-['2026-11-23','dinner','','烤肉米線','bún chả Hà Nội',''],['2026-11-23','dinner','','法國麵包','','備選'],['2026-11-23','evening','','隨便逛','',''],['2026-11-23','evening','','按摩','','看要不要'],
-['2026-11-24','breakfast','','法國麵包','','備選'],['2026-11-24','lunch','','法國麵包','','備選']
-];
-var SNAP_BOOKINGS=[
-{type:'flight',flightNo:'JX714',date:'2026-11-20',from:'TPE T2',depart:'11:40',to:'HAN T2',arrive:'13:55',ref:'',note:''},
-{type:'flight',flightNo:'JX716',date:'2026-11-24',from:'HAN T2',depart:'13:05',to:'TPE T2',arrive:'16:45',ref:'',note:''},
-{type:'stay',name:'Solaria Tesori Hanoi',checkin:'2026-11-20',checkout:'2026-11-21',place:'Solaria Tesori Hanoi',url:'',ref:'',note:''},
-{type:'stay',name:'郵輪',checkin:'2026-11-21',checkout:'2026-11-22',place:'',url:'',ref:'',note:''},
-{type:'stay',name:'樂天酒店 Lotte Hotel Hanoi',checkin:'2026-11-22',checkout:'2026-11-24',place:'Lotte Hotel Hanoi',url:'',ref:'',note:''}
-];
-function snapshot(){
-  return {
-    items:SNAP_ITEMS.map(function(a,i){return {id:'snap_i'+i,row:i+2,day:a[0],slot:a[1],time:a[2],title:a[3],place:a[4],url:'',note:a[5],done:false};}),
-    bookings:SNAP_BOOKINGS.map(function(b,i){return Object.assign({id:'snap_b'+i,row:i+2},b);}),
-    expenses:[],settings:{rateVND:0,rateUSD:0}
-  };
+var tripId=(new URLSearchParams(location.search).get('trip')||'').trim();
+function K(n){return 'trip.'+tripId+'.'+n;}
+function defaultCfg(){return {title:'',subtitle:'',start:'',end:'',baseCurrency:'TWD',currencies:['USD'],categories:DEFAULT_CATS.slice(),rates:{}};}
+
+var S={trip:null,api:'',status:'loading',cfg:defaultCfg(),items:[],bookings:[],expenses:[],synced:null,busy:0,
+  key:'',needKey:false,tab:'overview',day:null,open:null,adding:null,pending:false,trips:[],meta:{}};
+
+/* =============== 旅程列表（首頁） =============== */
+function hubUrl(action,trip){
+  return HUB_URL+'?action='+action+(trip?'&trip='+encodeURIComponent(trip):'')+'&t='+Date.now();
+}
+function loadTrips(){
+  if(!HUB_URL)return Promise.resolve([]);
+  return fetch(hubUrl('trips')).then(function(r){return r.json();}).then(function(j){
+    if(j.error)throw new Error(j.error);
+    jset('trip.list',j.trips||[]);return j.trips||[];
+  }).catch(function(){return jget('trip.list',[]);});
+}
+function tripName(t){var m=S.meta[t.id]||{};return m.title||t.name||t.id;}
+function yearOf(t){var m=String(t.id).match(/^(\d{4})[_-]/);return m?m[1]:'';}
+function statusOf(m){
+  if(!m||!validDate(m.start)||!validDate(m.end))return null;
+  var today=fd(new Date());
+  if(today<m.start){var n=Math.round((pd(m.start)-pd(today))/864e5);return {cls:'soon',text:n+' 天後出發'};}
+  if(today>m.end)return {cls:'',text:'已結束'};
+  return {cls:'now',text:'旅行中'};
+}
+function renderList(){
+  var top=document.getElementById('top');top.classList.add('plain');
+  document.getElementById('ttl').textContent='我的旅程';
+  document.title='我的旅程';
+  document.getElementById('sync').hidden=true;document.getElementById('tabs').hidden=true;
+  var meta=document.getElementById('meta');meta.textContent=S.trips.length?S.trips.length+' 趟旅程':'';
+  var view=document.getElementById('view');view.textContent='';
+  if(!S.trips.length){view.append(h('div',{class:'empty',text:HUB_URL?'還沒有旅程。到旅程總表新增一列（Name 與 Sheet URL）後重新整理。':'尚未設定 HUB_URL。請把 TravelHub.gs 部署後的網址貼進 index.html 最上方的 HUB_URL。'}));return;}
+  var list=S.trips.slice().sort(function(a,b){
+    var sa=(S.meta[a.id]||{}).start||'',sb=(S.meta[b.id]||{}).start||'';
+    return sa===sb?String(b.id).localeCompare(String(a.id)):(sb||'0').localeCompare(sa||'0');
+  });
+  var grid=h('div',{class:'trips'});
+  list.forEach(function(t){
+    var m=S.meta[t.id]||{},st=statusOf(m);
+    var dates=validDate(m.start)&&validDate(m.end)?md(m.start)+' – '+md(m.end):'';
+    grid.append(h('a',{class:'tcard',href:'?trip='+encodeURIComponent(t.id)},
+      h('span',{class:'yr',text:(yearOf(t)||'')+(validDate(m.start)?'  '+m.start.replace(/-/g,'/'):'')}),
+      h('span',{class:'nm'},tripName(t),m.subtitle?h('small',{text:m.subtitle}):null),
+      dates?h('span',{class:'dt',text:dates}):null,
+      st?h('span',{class:'pill '+st.cls,text:st.text}):null));
+  });
+  view.append(grid);
+}
+function loadMetas(){
+  S.trips.forEach(function(t){
+    fetch(hubUrl('meta',t.id)).then(function(r){return r.json();}).then(function(j){
+      if(j&&j.settings){S.meta[t.id]=j.settings;jset('trip.meta',S.meta);renderList();}
+    }).catch(function(){});
+  });
 }
 
-var S={status:API_URL?'loading':'demo',settings:{},items:[],bookings:[],expenses:[],synced:null,busy:0,
-  key:store('hanoi.key')||'',needKey:false,tab:'overview',day:null,open:null,adding:null,pending:false};
-
-/* ---------- 資料同步（Google 試算表 via Apps Script） ---------- */
-function applyData(d){S.items=d.items||[];S.bookings=d.bookings||[];S.expenses=d.expenses||[];S.settings=d.settings||{};}
-function cacheSave(){try{localStorage.setItem('hanoi.cache',JSON.stringify({items:S.items,bookings:S.bookings.filter(function(x){return !x._new;}),expenses:S.expenses.filter(function(x){return !x._new;}),settings:S.settings}));}catch(e){}}
-function cacheLoad(){try{var c=JSON.parse(localStorage.getItem('hanoi.cache')||'null');return c&&c.items?c:null;}catch(e){return null;}}
-
+/* =============== 單趟旅程：資料同步 =============== */
+function applyData(d){
+  S.items=d.items||[];S.bookings=d.bookings||[];S.expenses=d.expenses||[];
+  S.cfg=Object.assign(defaultCfg(),d.settings||{});
+}
+function cacheSave(){jset(K('cache'),{items:S.items,bookings:S.bookings.filter(function(x){return !x._new;}),expenses:S.expenses.filter(function(x){return !x._new;}),settings:S.cfg});}
 function api(body){
-  return fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
-    body:JSON.stringify(Object.assign({key:S.key||''},body))})
+  return fetch(S.api,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body:JSON.stringify(Object.assign({key:S.key||'',trip:tripId},body))})
     .then(function(r){return r.json();})
     .then(function(j){if(j&&j.error){if(j.error==='unauthorized')S.needKey=true;throw new Error(j.error);}return j;});
 }
 function load(){
-  if(!API_URL||S.busy)return Promise.resolve();
-  return fetch(API_URL+'?action=all&t='+Date.now()).then(function(r){return r.json();}).then(function(j){
+  if(!S.api||S.busy)return Promise.resolve();
+  return fetch(hubUrl('all',tripId)).then(function(r){return r.json();}).then(function(j){
     if(j.error)throw new Error(j.error);
     if(S.busy)return;
     var keepB=S.bookings.filter(function(x){return x._new;}),keepE=S.expenses.filter(function(x){return x._new;});
     S.items=j.items;S.bookings=j.bookings.concat(keepB);S.expenses=j.costs.concat(keepE);
-    S.settings={rateVND:j.rates.vnd,rateUSD:j.rates.usd};
+    S.cfg=Object.assign(defaultCfg(),j.settings||{});
     S.status='live';S.synced=new Date();cacheSave();rerender();
   }).catch(function(){S.status='error';rerender(true);});
 }
 var chain=Promise.resolve();
 function enqueue(fn){
-  if(!API_URL){if(!enqueue.warned){enqueue.warned=1;toast('尚未連接試算表，修改不會被儲存');}return;}
   S.busy++;S.status='saving';renderHeader();
   chain=chain.then(fn).catch(function(e){
     if(e.message==='unauthorized')syncKeyModal();else toast('儲存失敗，已重新載入試算表內容');
@@ -293,17 +336,18 @@ function save(kind,obj){
   });
 }
 function removeRec(kind,obj){enqueue(function(){return isTmp(obj.id)?Promise.resolve():api({action:'remove',kind:kind,id:obj.id});});}
-function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(function(){t.hidden=true;},3000);}
 
-/* ---------- 日期範圍：由試算表內的日期自動推算 ---------- */
+/* ---------- 日期範圍：settings 的起訖日 + 試算表內出現的日期 ---------- */
 function dayList(){
   var ds=[];
+  if(validDate(S.cfg.start))ds.push(S.cfg.start);
+  if(validDate(S.cfg.end))ds.push(S.cfg.end);
   S.items.forEach(function(i){if(validDate(i.day))ds.push(i.day);});
   S.bookings.forEach(function(b){[b.date,b.checkin,b.checkout].forEach(function(x){if(validDate(x))ds.push(x);});});
-  if(!ds.length)ds=[DEFAULT_START,DEFAULT_END];
+  if(!ds.length)ds=[fd(new Date())];
   ds.sort();
   var a=[],cur=ds[0],end=ds[ds.length-1],n=0;
-  while(cur<=end&&n<60){a.push(cur);cur=addDays(cur,1);n++;}
+  while(cur<=end&&n<90){a.push(cur);cur=addDays(cur,1);n++;}
   return a;
 }
 
@@ -363,7 +407,54 @@ function editor(o){
 }
 function closeEditor(){S.open=null;S.adding=null;rerender(true);}
 
-/* ---------- 行程頁 ---------- */
+/* ---------- 總覽 ---------- */
+function viewOverview(){
+  var days=dayList(),wrap=h('div');
+  function goDay(d){S.day=d;store(K('day'),d);location.hash='itinerary';}
+  var head=h('tr',null,h('th',{class:'rl',scope:'col'}),days.map(function(d,i){
+    return h('th',{class:'dh',scope:'col'},h('button',{type:'button',title:'查看這天的詳細行程',onclick:function(){goDay(d);}},md(d)+'（'+wd(d)+'）'),h('small',{text:'DAY '+(i+1)}));
+  }));
+  function flightsIn(d,slot){
+    return S.bookings.filter(function(b){
+      if(b.type!=='flight'||b.date!==d)return false;
+      var morning=(b.depart||'99:99')<'12:00';
+      return slot==='morning'?morning:(slot==='afternoon'?!morning:false);
+    });
+  }
+  var rows=SLOTS.map(function(s){
+    return h('tr',null,h('th',{class:'rl',scope:'row',text:s[1]}),days.map(function(d){
+      var cell=h('td');
+      flightsIn(d,s[0]).forEach(function(b){
+        cell.append(h('span',{class:'ovf',text:'✈ '+(b.flightNo||'')+'  '+(b.depart||'')+' '+(b.from||'')+' → '+(b.arrive||'')+' '+(b.to||'')}));
+      });
+      itemsFor(d,s[0]).forEach(function(i){
+        var href=mapHref(i);
+        cell.append(h('span',{class:'ovi'+(i.done?' done':'')},i.time?h('span',{class:'tm',text:i.time}):null,i.title||'(未命名)',
+          href?h('a',{href:href,target:'_blank',rel:'noopener','aria-label':'開啟地圖',text:'↗'}):null));
+      });
+      return cell;
+    }));
+  });
+  var stayRow=h('tr',null,h('th',{class:'rl',scope:'row',text:'住宿'}),days.map(function(d){
+    var cell=h('td');
+    S.bookings.filter(function(b){return b.type==='stay'&&b.checkin<=d&&d<b.checkout;}).forEach(function(b){
+      var href=validUrl(b.url)?b.url:(b.place?mapsSearch(b.place):null);
+      cell.append(h('span',{class:'ovs'},b.name||'',b.checkin===d?h('em',{text:'入住'}):null,
+        href?h('a',{href:href,target:'_blank',rel:'noopener',style:'margin-left:.3rem;text-decoration:none','aria-label':'開啟地圖',text:'↗'}):null));
+    });
+    S.bookings.filter(function(b){return b.type==='stay'&&b.checkout===d;}).forEach(function(b){
+      cell.append(h('span',{class:'sub',text:'退房：'+(b.name||'')}));
+    });
+    return cell;
+  }));
+  wrap.append(h('div',{class:'ovwrap'},h('table',{class:'ov'},h('thead',null,head),h('tbody',null,rows,stayRow))));
+  var bk=itemsFor('backup');
+  if(bk.length)wrap.append(h('p',{class:'hint',text:'待排清單：'+bk.map(function(i){return i.title;}).join('、')}));
+  wrap.append(h('p',{class:'hint',text:'點日期可以進入當天的詳細行程並編輯；項目後面的 ↗ 會開啟 Google Maps。'}));
+  return wrap;
+}
+
+/* ---------- 每日行程 ---------- */
 function itemNode(item,days){
   var open=S.open==='i:'+item.id;
   var href=mapHref(item);
@@ -437,16 +528,16 @@ function viewItinerary(){
   var days=dayList(),wrap=h('div');
   var today=fd(new Date());
   if(S.day!=='backup'&&days.indexOf(S.day)<0){
-    var saved=store('hanoi.day');
+    var saved=store(K('day'));
     S.day=(days.indexOf(saved)>=0||saved==='backup')?saved:(days.indexOf(today)>=0?today:days[0]);
   }
   var chips=h('div',{class:'days',role:'group','aria-label':'選擇日期'});
   days.forEach(function(d){
     chips.append(h('button',{class:'daychip'+(d===today?' today':''),type:'button','aria-pressed':S.day===d?'true':'false',
-      onclick:function(){S.day=d;S.open=null;S.adding=null;store('hanoi.day',d);rerender(true);}},h('b',{text:md(d)}),h('span',{text:'週'+wd(d)})));
+      onclick:function(){S.day=d;S.open=null;S.adding=null;store(K('day'),d);rerender(true);}},h('b',{text:md(d)}),h('span',{text:'週'+wd(d)})));
   });
   chips.append(h('button',{class:'daychip',type:'button','aria-pressed':S.day==='backup'?'true':'false',
-    onclick:function(){S.day='backup';S.open=null;S.adding=null;store('hanoi.day','backup');rerender(true);}},h('b',{text:'待排'}),h('span',{text:'備案'})));
+    onclick:function(){S.day='backup';S.open=null;S.adding=null;store(K('day'),'backup');rerender(true);}},h('b',{text:'待排'}),h('span',{text:'備案'})));
   wrap.append(chips);
 
   if(S.day==='backup'){
@@ -474,8 +565,8 @@ function viewItinerary(){
   return wrap;
 }
 
-/* ---------- 航班與住宿頁 ---------- */
-function bookingCard(b,days){
+/* ---------- 航班與住宿 ---------- */
+function bookingCard(b){
   var open=S.open==='b:'+b.id,isF=b.type==='flight';
   var head;
   if(isF){
@@ -522,89 +613,61 @@ function newBooking(type){
   S.bookings.push(b);S.open='b:'+id;rerender(true);
 }
 function viewBookings(){
-  var days=dayList(),wrap=h('div');
+  var wrap=h('div');
   var fl=S.bookings.filter(function(b){return b.type==='flight';}).sort(function(a,b){return ((a.date||'')+(a.depart||'')).localeCompare((b.date||'')+(b.depart||''));});
   var st=S.bookings.filter(function(b){return b.type==='stay';}).sort(function(a,b){return (a.checkin||'').localeCompare(b.checkin||'');});
   var s1=h('section',{class:'sec'},h('div',{class:'sechead'},h('h2',{text:'航班'}),h('button',{class:'btn',type:'button',text:'＋ 新增航班',onclick:function(){newBooking('flight');}})));
   if(!fl.length)s1.append(h('div',{class:'empty',text:'還沒有航班。按「新增航班」填入航班編號與時間。'}));
-  fl.forEach(function(b){s1.append(bookingCard(b,days));});
+  fl.forEach(function(b){s1.append(bookingCard(b));});
   var s2=h('section',{class:'sec'},h('div',{class:'sechead'},h('h2',{text:'住宿'}),h('button',{class:'btn',type:'button',text:'＋ 新增住宿',onclick:function(){newBooking('stay');}})));
   if(!st.length)s2.append(h('div',{class:'empty',text:'還沒有住宿。入住與退房日會自動顯示在行程的當天。'}));
-  st.forEach(function(b){s2.append(bookingCard(b,days));});
+  st.forEach(function(b){s2.append(bookingCard(b));});
   wrap.append(s1,s2);return wrap;
 }
 
-/* ---------- 總覽頁：每天一欄、每個時段一列，一眼看完整趟行程 ---------- */
-function viewOverview(){
-  var days=dayList(),wrap=h('div');
-  function goDay(d){S.day=d;store('hanoi.day',d);location.hash='itinerary';}
-  var head=h('tr',null,h('th',{class:'rl',scope:'col'}),days.map(function(d,i){
-    return h('th',{class:'dh',scope:'col'},h('button',{type:'button',title:'查看這天的詳細行程',onclick:function(){goDay(d);}},md(d)+'（'+wd(d)+'）'),h('small',{text:'DAY '+(i+1)}));
-  }));
-  function flightsIn(d,slot){
-    return S.bookings.filter(function(b){
-      if(b.type!=='flight'||b.date!==d)return false;
-      var morning=(b.depart||'99:99')<'12:00';
-      return slot==='morning'?morning:(slot==='afternoon'?!morning:false);
-    });
-  }
-  var rows=SLOTS.map(function(s){
-    return h('tr',null,h('th',{class:'rl',scope:'row',text:s[1]}),days.map(function(d){
-      var cell=h('td');
-      flightsIn(d,s[0]).forEach(function(b){
-        cell.append(h('span',{class:'ovf',text:'✈ '+(b.flightNo||'')+'  '+(b.depart||'')+' '+(b.from||'')+' → '+(b.arrive||'')+' '+(b.to||'')}));
-      });
-      itemsFor(d,s[0]).forEach(function(i){
-        var href=mapHref(i);
-        cell.append(h('span',{class:'ovi'+(i.done?' done':'')},i.time?h('span',{class:'tm',text:i.time}):null,i.title||'(未命名)',
-          href?h('a',{href:href,target:'_blank',rel:'noopener','aria-label':'開啟地圖',text:'↗'}):null));
-      });
-      return cell;
-    }));
-  });
-  var stayRow=h('tr',null,h('th',{class:'rl',scope:'row',text:'住宿'}),days.map(function(d){
-    var cell=h('td');
-    S.bookings.filter(function(b){return b.type==='stay'&&b.checkin<=d&&d<b.checkout;}).forEach(function(b){
-      var href=validUrl(b.url)?b.url:(b.place?mapsSearch(b.place):null);
-      cell.append(h('span',{class:'ovs'},b.name||'',b.checkin===d?h('em',{text:'入住'}):null,
-        href?h('a',{href:href,target:'_blank',rel:'noopener',style:'margin-left:.3rem;text-decoration:none','aria-label':'開啟地圖',text:'↗'}):null));
-    });
-    S.bookings.filter(function(b){return b.type==='stay'&&b.checkout===d;}).forEach(function(b){
-      cell.append(h('span',{class:'sub',text:'退房：'+(b.name||'')}));
-    });
-    return cell;
-  }));
-  wrap.append(h('div',{class:'ovwrap'},h('table',{class:'ov'},h('thead',null,head),h('tbody',null,rows,stayRow))));
-  var bk=itemsFor('backup');
-  if(bk.length)wrap.append(h('p',{class:'hint',text:'待排清單：'+bk.map(function(i){return i.title;}).join('、')}));
-  wrap.append(h('p',{class:'hint',text:'點日期可以進入當天的詳細行程並編輯；項目後面的 ↗ 會開啟 Google Maps。'}));
-  return wrap;
+/* ---------- 費用（主幣別與外幣、分類都讀 settings 分頁） ---------- */
+function currencies(){
+  var base=S.cfg.baseCurrency,out=[base];
+  S.cfg.currencies.forEach(function(c){if(out.indexOf(c)<0)out.push(c);});
+  S.expenses.forEach(function(x){if(x.currency&&out.indexOf(x.currency)<0)out.push(x.currency);});
+  return out;
 }
-
-/* ---------- 費用頁 ---------- */
-function toTWD(amount,cur){
-  var s=S.settings;
-  if(cur==='TWD')return amount;
-  if(cur==='VND')return Number(s.rateVND)>0?amount/Number(s.rateVND):null;
-  if(cur==='USD')return Number(s.rateUSD)>0?amount*Number(s.rateUSD):null;
-  return null;
+function categories(){
+  var out=S.cfg.categories.slice();
+  S.expenses.forEach(function(x){if(x.category&&out.indexOf(x.category)<0)out.push(x.category);});
+  return out;
+}
+function defaultDir(c){return STRONG.indexOf(c)>=0?'perForeign':'perBase';}
+function toBase(amount,cur){
+  cur=cur||S.cfg.baseCurrency;
+  if(cur===S.cfg.baseCurrency)return amount;
+  var st=S.cfg.rates[cur];
+  if(!st||!(st.rate>0))return null;
+  return (st.dir||defaultDir(cur))==='perForeign'?amount*st.rate:amount/st.rate;
+}
+function setRate(c,rate,dir){
+  S.cfg.rates[c]={rate:rate,dir:dir};
+  var pairs={};pairs['rate_'+c]=rate||'';pairs['rateDir_'+c]=dir;
+  enqueue(function(){return api({action:'setSettings',pairs:pairs});});
+  rerender(true);
 }
 function expenseCard(x,days){
-  var open=S.open==='e:'+x.id;
+  var open=S.open==='e:'+x.id,base=S.cfg.baseCurrency;
   var card=h('div',{class:'card'},h('div',{class:'irow'},
     h('div',{class:'imain'},
       h('span',{class:'ttl'},h('span',{class:'tm',text:x.category||'其他'}),x.title||'(未命名)'),
       h('span',{class:'sub',text:[validDate(x.date)?md(x.date):'',x.payer?'付款：'+x.payer:'',x.note||''].filter(Boolean).join('　')})),
-    h('span',{class:'amt',text:fmt(x.amount)+' '+(x.currency||'TWD')}),
+    h('span',{class:'amt',text:fmt(x.amount)+' '+(x.currency||base)}),
     h('button',{class:'btn',type:'button',text:open?'收合':'編輯',onclick:function(){S.open=open?null:'e:'+x.id;rerender(true);}})));
   if(open){
     var dateOpts=[['','未指定']].concat(days.map(function(d){return [d,md(d)+'（'+wd(d)+'）'];}));
     var fields=[
       {key:'title',label:'項目',wide:true},
-      {key:'amount',label:'金額',type:'number'},{key:'currency',label:'幣別',type:'select',options:CURS.map(function(c){return [c,c];})},
-      {key:'category',label:'類別',type:'select',options:CATS.map(function(c){return [c,c];})},{key:'payer',label:'付款人'},
+      {key:'amount',label:'金額',type:'number'},{key:'currency',label:'幣別',type:'select',options:currencies().map(function(c){return [c,c];})},
+      {key:'category',label:'類別',type:'select',options:categories().map(function(c){return [c,c];})},{key:'payer',label:'付款人'},
       {key:'date',label:'日期',type:'select',options:dateOpts},{key:'note',label:'備註'}
     ];
+    if(!x.currency)x.currency=base;
     card.append(editor({data:x,fields:fields,
       onSave:function(v){Object.assign(x,{title:v.title,amount:Number(v.amount)||0,currency:v.currency,category:v.category,payer:v.payer,date:v.date,note:v.note});
         delete x._new;save('costs',x);closeEditor();},
@@ -614,64 +677,50 @@ function expenseCard(x,days){
   return card;
 }
 function viewCosts(){
-  var days=dayList(),wrap=h('div');
+  var days=dayList(),wrap=h('div'),base=S.cfg.baseCurrency;
   var ex=S.expenses.slice().sort(function(a,b){return ((a.date||'9')+String(a.row||0).padStart(6,'0')).localeCompare((b.date||'9')+String(b.row||0).padStart(6,'0'));});
-  var byCur={};ex.forEach(function(x){var c=x.currency||'TWD';byCur[c]=(byCur[c]||0)+(Number(x.amount)||0);});
-  var curs=CURS.filter(function(c){return byCur[c]!=null;});
+  var byCur={};ex.forEach(function(x){var c=x.currency||base;byCur[c]=(byCur[c]||0)+(Number(x.amount)||0);});
+  var curs=currencies().filter(function(c){return byCur[c]!=null;});
   var totals=h('div',{class:'totals'});
   curs.forEach(function(c){totals.append(h('div',{class:'tot'},h('small',{text:c+' 小計'}),h('b',{text:fmt(byCur[c])})));});
   var allOk=true,sum=0;
-  ex.forEach(function(x){var t=toTWD(Number(x.amount)||0,x.currency||'TWD');if(t==null)allOk=false;else sum+=t;});
-  if(ex.length&&allOk)totals.append(h('div',{class:'tot'},h('small',{text:'合計（折合 TWD）'}),h('b',{text:'NT$ '+fmt(Math.round(sum))})));
+  ex.forEach(function(x){var t=toBase(Number(x.amount)||0,x.currency);if(t==null)allOk=false;else sum+=t;});
+  if(ex.length&&allOk)totals.append(h('div',{class:'tot'},h('small',{text:'合計（折合 '+base+'）'}),h('b',{text:fmt(Math.round(sum))+' '+base})));
   if(ex.length)wrap.append(totals);
 
-  var rates=h('div',{class:'rates'},h('span',{text:'匯率（用於折合台幣）'}));
-  [['rateVND','1 TWD ＝','VND'],['rateUSD','1 USD ＝','TWD']].forEach(function(r){
-    var inp=h('input',{type:'number',inputmode:'decimal',step:'any',id:'rate-'+r[0],value:S.settings[r[0]]||''});
-    inp.addEventListener('change',function(){
-      S.settings[r[0]]=Number(inp.value)||0;
-      enqueue(function(){return api({action:'setRates',vnd:Number(S.settings.rateVND)||0,usd:Number(S.settings.rateUSD)||0});});
-      rerender(true);
+  if(S.cfg.currencies.length){
+    var rates=h('div',{class:'rates'},h('span',{text:'匯率（折合 '+base+'）'}));
+    S.cfg.currencies.forEach(function(c){
+      var st=S.cfg.rates[c]||{rate:0,dir:''},dir=st.dir||defaultDir(c);
+      var inp=h('input',{type:'number',inputmode:'decimal',step:'any',id:'rate-'+c,value:st.rate||''});
+      inp.addEventListener('change',function(){setRate(c,Number(inp.value)||0,dir);});
+      var flip=h('button',{type:'button',class:'linkbtn',text:'⇄',title:'切換換算方向',
+        onclick:function(){var nd=dir==='perBase'?'perForeign':'perBase';setRate(c,st.rate>0?Number((1/st.rate).toPrecision(4)):0,nd);}});
+      rates.append(h('label',null,dir==='perBase'?'1 '+base+' ＝':'1 '+c+' ＝',inp,dir==='perBase'?c:base,flip));
     });
-    rates.append(h('label',null,r[1],inp,r[2]));
-  });
-  wrap.append(rates);
+    wrap.append(rates);
+  }
 
   if(ex.length&&curs.length){
-    var cats=CATS.filter(function(c){return ex.some(function(x){return (x.category||'其他')===c;});});
+    var cats=categories().filter(function(c){return ex.some(function(x){return (x.category||'其他')===c;});});
     var head=h('tr',null,h('th',{text:'類別'}),curs.map(function(c){return h('th',{text:c});}));
     var tbody=cats.map(function(c){return h('tr',null,h('td',{text:c}),curs.map(function(cu){
-      var s=ex.filter(function(x){return (x.category||'其他')===c&&(x.currency||'TWD')===cu;}).reduce(function(a,x){return a+(Number(x.amount)||0);},0);
+      var s=ex.filter(function(x){return (x.category||'其他')===c&&(x.currency||base)===cu;}).reduce(function(a,x){return a+(Number(x.amount)||0);},0);
       return h('td',{text:s?fmt(s):'–'});}));});
     wrap.append(h('div',{class:'tablewrap'},h('table',null,h('thead',null,head),h('tbody',null,tbody))));
   }
 
   var sec=h('section',{class:'sec'},h('div',{class:'sechead'},h('h2',{text:'支出明細'}),
     h('button',{class:'btn primary',type:'button',text:'＋ 新增支出',onclick:function(){
-      var id=uid();S.expenses.push({id:id,row:1e9,title:'',amount:'',currency:'VND',category:'餐飲',payer:'',date:'',note:'',_new:true});S.open='e:'+id;rerender(true);}})));
-  if(!ex.length)sec.append(h('div',{class:'empty',text:'還沒有記錄。按「新增支出」，機票、住宿、餐費都可以記，幣別可選 TWD、VND、USD。'}));
+      var id=uid(),cs=currencies();
+      S.expenses.push({id:id,row:1e9,title:'',amount:'',currency:cs[1]||cs[0],category:S.cfg.categories[2]||S.cfg.categories[0]||'其他',payer:'',date:'',note:'',_new:true});
+      S.open='e:'+id;rerender(true);}})));
+  if(!ex.length)sec.append(h('div',{class:'empty',text:'還沒有記錄。按「新增支出」，機票、住宿、餐費都可以記。'}));
   ex.forEach(function(x){sec.append(expenseCard(x,days));});
   wrap.append(sec);return wrap;
 }
 
-/* ---------- 外框 ---------- */
-function two(n){return String(n).padStart(2,'0');}
-function renderHeader(){
-  var days=dayList();
-  var ttl=document.getElementById('ttl');ttl.textContent='';ttl.append(TITLE,h('small',{text:SUB}));
-  var meta=document.getElementById('meta');meta.textContent='';
-  var a=days[0],b=days[days.length-1];
-  meta.append(md(a)+'（'+wd(a)+'）– '+md(b)+'（'+wd(b)+'）',' · '+days.length+' 天 '+(days.length-1)+' 夜');
-  if(SHEET_URL)meta.append(h('a',{href:SHEET_URL,target:'_blank',rel:'noopener',text:'在試算表開啟 ↗'}));
-  var sync=document.getElementById('sync');
-  var label={live:'已同步 '+(S.synced?two(S.synced.getHours())+':'+two(S.synced.getMinutes()):''),loading:'載入中',saving:'儲存中…',
-    error:'離線，顯示上次資料',demo:'示範資料，尚未連接試算表'}[S.status]||'';
-  sync.className='sync '+(S.status==='live'||S.status==='saving'?'live':S.status==='error'?'error':S.status==='demo'?'demo':'');
-  sync.lastChild.textContent=label;
-  var tabs=document.getElementById('tabs');tabs.textContent='';
-  TABS.forEach(function(p){tabs.append(h('button',{type:'button',role:'tab','aria-selected':S.tab===p[0]?'true':'false',text:p[1],
-    onclick:function(){location.hash=p[0];}}));});
-}
+/* ---------- 編輯密碼彈窗 ---------- */
 var keyModal=null;
 function syncKeyModal(){
   if(!S.needKey){if(keyModal)keyModal.hidden=true;return;}
@@ -679,14 +728,14 @@ function syncKeyModal(){
     var inp=h('input',{type:'password',id:'editkey',placeholder:'編輯密碼',autocomplete:'off'});
     var form=h('form',{class:'kbox',role:'dialog','aria-modal':'true','aria-labelledby':'keytitle'},
       h('h3',{id:'keytitle',text:'需要編輯密碼'}),
-      h('p',{class:'sub',text:'這份行程需要密碼才能修改。輸入後會記在這個瀏覽器，之後不用再輸入。'}),
+      h('p',{class:'sub',text:'這趟旅程需要密碼才能修改。輸入後會記在這個瀏覽器，之後不用再輸入。'}),
       inp,h('p',{class:'kerr',id:'keyerr'}),
       h('div',{class:'acts2'},
         h('button',{type:'button',class:'btn',text:'取消',onclick:function(){S.needKey=false;syncKeyModal();}}),
         h('button',{type:'submit',class:'btn primary',text:'確認'})));
     form.addEventListener('submit',function(e){
       e.preventDefault();var v=inp.value.trim();if(!v)return;
-      S.key=v;store('hanoi.key',v);S.needKey=false;inp.value='';syncKeyModal();
+      S.key=v;store(K('key'),v);S.needKey=false;inp.value='';syncKeyModal();
       toast('密碼已儲存，請再修改一次');load().then(function(){rerender(true);});
     });
     keyModal=h('div',{class:'kback'},form);
@@ -697,10 +746,34 @@ function syncKeyModal(){
   keyModal.hidden=false;
   setTimeout(function(){var k=document.getElementById('editkey');if(k)k.focus();},0);
 }
+
+/* ---------- 外框 ---------- */
+function tripTitle(){return S.cfg.title||((S.meta[tripId]||{}).title)||(S.trip&&S.trip.name)||tripId;}
+function renderHeader(){
+  var days=dayList();
+  var top=document.getElementById('top');top.classList.remove('plain');
+  var ttl=document.getElementById('ttl');ttl.textContent='';ttl.append(tripTitle());
+  var sub=S.cfg.subtitle||((S.meta[tripId]||{}).subtitle)||'';
+  if(sub)ttl.append(h('small',{text:sub}));
+  document.title=tripTitle()+' 行程';
+  var meta=document.getElementById('meta');meta.textContent='';
+  var a=days[0],b=days[days.length-1];
+  meta.append(md(a)+'（'+wd(a)+'）– '+md(b)+'（'+wd(b)+'）',' · '+days.length+' 天 '+Math.max(days.length-1,0)+' 夜');
+  meta.append(h('a',{href:location.pathname,text:'← 所有旅程'}));
+  if(S.trip&&S.trip.sheet)meta.append(h('a',{href:S.trip.sheet,target:'_blank',rel:'noopener',text:'在試算表開啟 ↗'}));
+  var sync=document.getElementById('sync');sync.hidden=false;
+  var label={live:'已同步 '+(S.synced?two(S.synced.getHours())+':'+two(S.synced.getMinutes()):''),loading:'載入中',saving:'儲存中…',error:'離線，顯示上次資料'}[S.status]||'';
+  sync.className='sync '+(S.status==='live'||S.status==='saving'?'live':S.status==='error'?'error':'');
+  sync.lastChild.textContent=label;
+  var tabs=document.getElementById('tabs');tabs.hidden=false;tabs.textContent='';
+  TABS.forEach(function(p){tabs.append(h('button',{type:'button',role:'tab','aria-selected':S.tab===p[0]?'true':'false',text:p[1],
+    onclick:function(){location.hash=p[0];}}));});
+}
 function render(){
+  if(!tripId){renderList();return;}
   renderHeader();
   var view=document.getElementById('view');view.textContent='';
-  if(S.status==='demo')view.append(h('div',{class:'banner',text:'目前顯示的是示範資料。把 Apps Script 的網頁應用程式網址貼進 index.html 最上方的 API_URL，就會連動你的 Google 試算表。'}));
+  if(!S.trip){view.append(h('div',{class:'notice'},S.status==='missing'?['找不到旅程「'+tripId+'」。',h('br'),h('a',{href:location.pathname,text:'回到所有旅程'})]:'載入中…'));return;}
   syncKeyModal();
   if(S.tab==='overview')view.append(viewOverview());
   else if(S.tab==='itinerary')view.append(viewItinerary());
@@ -709,17 +782,45 @@ function render(){
 }
 function rerender(force){
   var a=document.activeElement;
-  if(!force&&a&&a.closest&&a.closest('.editor,.addrow,.rates,.keyrow')&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)){S.pending=true;return;}
+  if(!force&&a&&a.closest&&a.closest('.editor,.addrow,.rates')&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)){S.pending=true;return;}
   S.pending=false;render();
 }
 function readHash(){var t=(location.hash||'').slice(1);S.tab=TABS.some(function(p){return p[0]===t;})?t:'overview';S.open=null;S.adding=null;}
-window.addEventListener('hashchange',function(){readHash();rerender(true);});
-document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')load();});
 
-readHash();
-applyData(API_URL?(cacheLoad()||snapshot()):snapshot());
-render();
-if(API_URL){load();setInterval(function(){if(document.visibilityState==='visible')load();},20000);}
+function startTrip(t){
+  S.trip=t;S.api=HUB_URL;S.key=store(K('key'))||'';
+  var c=jget(K('cache'),null);
+  if(c&&c.items)applyData(c);
+  S.status='loading';render();
+  load();
+  setInterval(function(){if(document.visibilityState==='visible')load();},20000);
+  document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')load();});
+}
+
+/* ---------- 啟動 ---------- */
+// 除錯用：發生程式錯誤時，把錯誤訊息與出錯位置顯示在畫面下方（方便回報）
+window.addEventListener('error',function(e){
+  var where=e.filename?(' @'+String(e.filename).split('/').pop()+':'+e.lineno+':'+e.colno):'';
+  toast('頁面錯誤：'+e.message+where);
+});
+window.addEventListener('unhandledrejection',function(e){
+  toast('頁面錯誤：'+String(e.reason&&e.reason.message||e.reason));
+});
+S.meta=jget('trip.meta',{});
+if(tripId){
+  readHash();
+  window.addEventListener('hashchange',function(){readHash();rerender(true);});
+  render();
+  loadTrips().then(function(list){
+    var t=list.filter(function(x){return x.id===tripId;})[0];
+    if(!t){S.status='missing';render();return;}
+    startTrip(t);
+  });
+}else{
+  S.trips=jget('trip.list',[]);
+  renderList();
+  loadTrips().then(function(list){S.trips=list;renderList();loadMetas();});
+}
 })();
 </script>
 </body>
